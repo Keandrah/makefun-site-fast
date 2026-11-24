@@ -96,6 +96,7 @@ export function lex(src) {
 
 /** The characters a backslash escapes. */
 const ESCAPABLE = new Set(['\\', '`', '*', '_', '[', ']', '(', ')', '#', '+', '-', '.', '!', '>']);
+const INLINE_SPECIAL = /[\\`*\[]/g;
 
 /** The first index from `from` where `s` holds `what` outside a backslash escape, or -1. */
 function findUnescaped(s, what, from) {
@@ -136,12 +137,9 @@ export function inline(s, env) {
     // Most Markdown text is plain. Escape an entire run at once instead of
     // calling replace() for each individual character.
     if (c !== '\\' && c !== '`' && c !== '*' && c !== '[') {
-      let end = i + 1;
-      while (end < s.length) {
-        const next = s[end];
-        if (next === '\\' || next === '`' || next === '*' || next === '[') break;
-        end++;
-      }
+      INLINE_SPECIAL.lastIndex = i;
+      const match = INLINE_SPECIAL.exec(s);
+      const end = match === null ? s.length : match.index;
       out += escapeHtml(s.slice(i, end));
       i = end;
       continue;
